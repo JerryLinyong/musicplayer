@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_683112_jhtia2q6epjmunmi.css">
+    <style>
+        html { 
+            height: 100%;
+        }
+        body {
+            height: 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            margin: 0;
+        }
+        .bgp {
+            height: 100%;
+            background-repeat: no-repeat!important;
+            background-position: center!important;
+            background-size: contain!important;
+            margin: 0;
+            filter: blur(2px);
+            
+        }
+        a {
+            text-decoration: none;
+        }
+        .main {
+            position: absolute;
+            top: calc(50% - 250px);
+            left: calc(50% - 180px);
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.7);
+            width: 360px;
+            height: 160px;
+            border-radius: 10px;
+        }
+        .iconfont {
+            font-size: 30px;
+            color: green;
+        }
+        .info {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn {
+            position: absolute;
+            bottom: 35px;
+            left: 10px;
+        }
+        .btn span {
+            padding: 5px;
+        }
+        .song {
+            text-align: center;
+            height: 40px;
+            width: 200px;
+            margin: 0 auto;
+            margin-top: 20px;
+        }
+        .singer {
+            text-align: center;
+            height: 30px;
+            width: 200px;
+            margin: 0 auto;
+        }
+        .bar {
+            background: grey;
+            position: relative;
+            height: 3px;
+            width: 260px;
+            margin-top: 40px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .process {
+            position: absolute;
+        }
+        .time {
+            float: right;
+            margin-right: 20px;
+            height: 20px;
+            width: 40px;
+        }
+        .process {
+            height: 3px;
+            background: blue;
+        }
+        img {
+            position: absolute;
+            right: 20px;
+            bottom: 40px;
+            height: 20px;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="bgp"></div>
+    <div class="main">
+        <div class="info">
+            <p class="song"></p>
+            <div class="btn">
+                <a href="#"><span class="iconfont icon-music_beginning_button"></span></a> 
+                <a href="#"><span class="iconfont midbtn icon-music_play_button"></span></a>
+                <a href="#"><span class="iconfont icon-music_end_button"></span></a>
+            </div> 
+            <div class="singer"></div>
+            <a href="#"> <div class="bar"><div class="process"></div></div></a>
+            <div class="time"></div>
+            <img src="http://www.kuwo.cn/static/image/singles/gif.gif" alt="?">
+        </div>
+        <ul class="songlist"></ul>
+    </div>
+    <script>
+        function getmusiclist(callback){
+            var xhr= new XMLHttpRequest()
+            xhr.open('get','https://easy-mock.com/mock/5b0942b15c37757453191eac/getType',true)
+            xhr.onload = function(){
+                if((xhr.status >= 200 && xhr.status <300)|| xhr.status === 304){
+                    callback(JSON.parse(this.responseText))
+                }
+                else{
+                    console.log('获取数据失败')
+                }
+            }
+            xhr.onerror = function(){
+               console.log('网络异常')
+            }
+            xhr.send()
+        }
+        var currentIndex = 0
+        getmusiclist(function(list){
+            loadMusic(list[currentIndex])
+        })
+        function loadMusic(musicObj){
+            audio.src = musicObj.src
+            $('.song').innerText = musicObj.title
+            $('.singer').innerText = musicObj.author
+            bgp.style.background = musicObj.bgp
+            
+        }
+        var audio = new Audio()
+        audio.autoplay
+        function $(x){ return document.querySelector(x)}
+        var bgp = $('.bgp')
+        audio.ontimeupdate = function(){
+            console.log(this.currentTime)
+            $('.process').style.width = (this.currentTime/this.duration)*100 + '%'
+            var time = Math.floor(this.currentTime)
+            var sec = Math.floor(time%60)
+            sec<10? sec="0"+sec:sec=sec
+            var timetext = Math.floor(time/60) + ":" +  sec
+            $('.time'   ).innerText = timetext
+        }
+        $('.midbtn').onclick =function() {
+            if(audio.paused){
+                audio.play()
+                $('.midbtn').classList.add("icon-music_pause_button")
+                $('.midbtn').classList.remove("icon-music_play_button")
+                $('img').style.opacity=1
+            }
+            else{
+                audio.pause()
+                $('.midbtn').classList.add("icon-music_play_button")
+                $('.midbtn').classList.remove("icon-music_pause_button")
+                $('img').style.opacity=0
+            }
+        }
+        $('.icon-music_end_button').onclick = function() {
+            getmusiclist(function(list){
+                currentIndex++
+                currentIndex = currentIndex%list.length
+                loadMusic(list[currentIndex])
+                audio.play()
+                $('.midbtn').classList.add("icon-music_pause_button")
+                $('.midbtn').classList.remove("icon-music_play_button")
+                $('img').style.opacity=1
+            })
+            
+        }
+        $('.icon-music_beginning_button').onclick = function() {
+            getmusiclist(function(list){
+                currentIndex--
+                currentIndex<0?(currentIndex=list.length-1):currentIndex=currentIndex
+                currentIndex = currentIndex%list.length
+                loadMusic(list[currentIndex])
+                audio.play()
+                $('.midbtn').classList.add("icon-music_pause_button")
+                $('.midbtn').classList.remove("icon-music_play_button")
+                $('img').style.opacity=1
+            })
+        }
+        $('.bar').onclick=function(e){
+            var percent=e.offsetX / parseInt(getComputedStyle($('.bar')).width)
+            console.log(percent)
+            audio.currentTime=audio.duration * percent
+        }
+        audio.onended = function(){
+            getmusiclist(function(list){
+                currentIndex++
+                currentIndex = currentIndex%list.length
+                loadMusic(list[currentIndex])
+                audio.play()
+                $('.midbtn').classList.add("icon-music_pause_button")
+                $('.midbtn').classList.remove("icon-music_play_button")
+                $('img').style.opacity=1
+            })
+        }
+        audio.volume=0.1
+    </script>
+</body>
+</html>
